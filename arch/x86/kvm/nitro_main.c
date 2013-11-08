@@ -32,32 +32,20 @@ struct kvm* nitro_get_vm_by_creator(pid_t creator){
 
 void nitro_create_vm_hook(struct kvm *kvm){
   pid_t pid;
-  struct nitro_kvm *nitro_kvm;
   
   //get current pid
   pid = pid_nr(get_task_pid(current, PIDTYPE_PID));
   printk(KERN_INFO "nitro: new VM created, creating process: %d\n", pid);
   
-  kvm->nitro_kvm = NULL;
-  
-  //allocate memory
-  nitro_kvm = (struct nitro_kvm*) kzalloc(sizeof(struct nitro_kvm),GFP_KERNEL | __GFP_REPEAT);
-  if(nitro_kvm == NULL){
-    printk(KERN_WARNING "nitro: unable to alocate memory for nitro_kvm. the VM(%d) will start, but nitro cannot be attached. Please restart the VM for nitro functionality.\n", pid);
-    return;
-  }
-  
   //init nitro_kvm
-  nitro_kvm->placeholder = 0;
-  
-  //add nitro_kvm to kvm
-  kvm->nitro_kvm = nitro_kvm;
+  kvm->nitro_kvm.placeholder = 0;
 }
 
 void nitro_destroy_vm_hook(struct kvm *kvm){
-  if(kvm->nitro_kvm != NULL)
-    kfree(kvm->nitro_kvm);
-  kvm->nitro_kvm = NULL;
+  
+  //deinit nitro_kvm
+  kvm->nitro_kvm.placeholder = 0;
+  
 }
 
 int nitro_iotcl_num_vms(void){
