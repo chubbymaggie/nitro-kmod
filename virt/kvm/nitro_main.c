@@ -38,13 +38,13 @@ void nitro_create_vm_hook(struct kvm *kvm){
   printk(KERN_INFO "nitro: new VM created, creating process: %d\n", pid);
   
   //init nitro_kvm
-  kvm->nitro_kvm.placeholder = 0;
+  kvm->nitro_kvm.trap_syscalls = 0;
 }
 
 void nitro_destroy_vm_hook(struct kvm *kvm){
   
   //deinit nitro_kvm
-  kvm->nitro_kvm.placeholder = 0;
+  kvm->nitro_kvm.trap_syscalls = 0;
   
 }
 
@@ -88,10 +88,8 @@ int nitro_iotcl_attach_vcpus(struct kvm *kvm, struct nitro_vcpus *nvcpus){
   mutex_unlock(&kvm->lock);
   return 0;
   
-  error_out:
+error_out:
   mutex_unlock(&kvm->lock);
   return -1;
 }
-
-
 

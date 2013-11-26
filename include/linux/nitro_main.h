@@ -8,7 +8,7 @@
 
 
 struct nitro_kvm{
-  int placeholder;//stuff will go here once we need it
+  int trap_syscalls;
 };
 
 struct kvm* nitro_get_vm_by_creator(pid_t);
