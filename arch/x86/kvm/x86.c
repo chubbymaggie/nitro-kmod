@@ -64,6 +64,9 @@
 #include <asm/pvclock.h>
 #include <asm/div64.h>
 
+#include <linux/nitro.h>
+#include "nitro_x86.h"
+
 #define MAX_IO_MSRS 256
 #define KVM_MAX_MCE_BANKS 32
 #define KVM_MCE_CAP_SUPPORTED (MCG_CTL_P | MCG_SER_P)
@@ -3824,6 +3827,14 @@ long kvm_arch_vm_ioctl(struct file *filp,
 		if (copy_to_user(argp, &user_ns, sizeof(user_ns)))
 			goto out;
 		r = 0;
+		break;
+	}
+	case KVM_NITRO_SET_SYSCALL_TRAP: {
+		r = nitro_set_syscall_trap(kvm);
+		break;
+	}
+	case KVM_NITRO_UNSET_SYSCALL_TRAP: {
+		r = nitro_unset_syscall_trap(kvm);
 		break;
 	}
 

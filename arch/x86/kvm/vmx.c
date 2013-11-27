@@ -1390,8 +1390,8 @@ static void update_exception_bitmap(struct kvm_vcpu *vcpu)
 	     (KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP)) ==
 	    (KVM_GUESTDBG_ENABLE | KVM_GUESTDBG_USE_SW_BP))
 		eb |= 1u << BP_VECTOR;
-	if (vcpu->kvm->nitro_kvm.trap_syscalls)
-		eb |= 1u << GP_VECTOR;
+	//if (vcpu->kvm->nitro_kvm.trap_syscalls)
+	//	eb |= 1u << GP_VECTOR;
 	if (to_vmx(vcpu)->rmode.vm86_active)
 		eb = ~0;
 	if (enable_ept)

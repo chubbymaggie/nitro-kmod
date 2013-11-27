@@ -2993,8 +2993,13 @@ static int em_wrmsr(struct x86_emulate_ctxt *ctxt)
 static int em_rdmsr(struct x86_emulate_ctxt *ctxt)
 {
 	u64 msr_data;
+	u32 msr_index;
+	
+	msr_index = reg_read(ctxt, VCPU_REGS_RCX);
+	
+	printk(KERN_INFO "nitro: rdmsr: 0x%x\n", msr_index);
 
-	if (ctxt->ops->get_msr(ctxt, reg_read(ctxt, VCPU_REGS_RCX), &msr_data))
+	if (ctxt->ops->get_msr(ctxt, msr_index, &msr_data))
 		return emulate_gp(ctxt, 0);
 
 	*reg_write(ctxt, VCPU_REGS_RAX) = (u32)msr_data;
