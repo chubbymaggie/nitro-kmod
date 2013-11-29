@@ -1,21 +1,62 @@
 #include "nitro_x86.h"
 
+#include "x86.h"
+
 #include <linux/nitro_main.h>
 
-
+extern int kvm_set_msr_common(struct kvm_vcpu*, struct msr_data*);
 
 int nitro_set_syscall_trap(struct kvm *kvm){
+  int i;
+  struct kvm_vcpu *vcpu;
+  u64 efer;
+  struct msr_data msr_info;
+  
   printk(KERN_INFO "nitro: set syscall trap\n");
-  //kvm->nitro_kvm.trap_syscalls = 1;
   
+  mutex_lock(&kvm->lock);
   
+  kvm_for_each_vcpu(i, vcpu, kvm){
+    vcpu_load(vcpu);
+    kvm_get_msr_common(vcpu, MSR_EFER, &efer);
+    msr_info.index = MSR_EFER;
+    msr_info.data = efer & ~EFER_SCE;
+    msr_info.host_initiated = true;
+    kvm_set_msr_common(vcpu, &msr_info);
+    vcpu_put(vcpu);
+  }
+  
+  kvm->nitro_kvm.trap_syscalls = 1;
+  
+  mutex_unlock(&kvm->lock);
   
   return 0;
 }
 
 int nitro_unset_syscall_trap(struct kvm *kvm){
+  int i;
+  struct kvm_vcpu *vcpu;
+  u64 efer;
+  struct msr_data msr_info;
+  
   printk(KERN_INFO "nitro: unset syscall trap\n");
-  //kvm->nitro_kvm.trap_syscalls = 0;
+  
+  mutex_lock(&kvm->lock);
+  
+  kvm->nitro_kvm.trap_syscalls = 0;
+  
+  kvm_for_each_vcpu(i, vcpu, kvm){
+    vcpu_load(vcpu);
+    kvm_get_msr_common(vcpu, MSR_EFER, &efer);
+    msr_info.index = MSR_EFER;
+    msr_info.data = efer | EFER_SCE;
+    msr_info.host_initiated = true;
+    kvm_set_msr_common(vcpu, &msr_info);
+    vcpu_put(vcpu);
+  }
+  
+  mutex_unlock(&kvm->lock);
+  
   return 0;
 }
 
