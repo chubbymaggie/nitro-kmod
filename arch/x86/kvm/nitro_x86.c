@@ -63,10 +63,10 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
 int nitro_handle_syscall_trap(struct kvm_vcpu *vcpu){
   printk(KERN_INFO "nitro: syscall trap\n");
   
-  //vcpu->run->exit_reason = KVM_EXIT_DEBUG;
+  vcpu->run->exit_reason = 30;
   vcpu->nitro.trap_syscall_hit = 0;
 
-  //return 0;//returning 0 will give control back to qemu
-  return 1;
+  return 0;//returning 0 will give control back to qemu
+  //return 1;
 }
 
