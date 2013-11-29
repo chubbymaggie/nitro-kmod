@@ -2150,8 +2150,6 @@ static int em_syscall(struct x86_emulate_ctxt *ctxt)
 	u16 cs_sel, ss_sel;
 	u64 efer = 0;
 	struct kvm_vcpu *vcpu = container_of(ctxt, struct kvm_vcpu, arch.emulate_ctxt);
-	
-	printk(KERN_INFO "nitro: entering em_syscall...\n");
 
 	/* syscall is not available in real mode */
 	if (ctxt->mode == X86EMUL_MODE_REAL ||
@@ -2213,8 +2211,6 @@ static int em_sysret(struct x86_emulate_ctxt *ctxt)
 	u16 cs_sel, ss_sel;
 	u64 efer = 0;
 	struct kvm_vcpu *vcpu = container_of(ctxt, struct kvm_vcpu, arch.emulate_ctxt);
-	
-	printk(KERN_INFO "nitro: entering em_sysret...\n");
 
 	/* syscall is not available in real mode */
 	if (ctxt->mode == X86EMUL_MODE_REAL ||
@@ -2261,18 +2257,14 @@ static int em_sysret(struct x86_emulate_ctxt *ctxt)
 	
 	//setup stack segment, atleast what is left to do.  
 	//setup_syscalls_segments does most of the work for us
-	ss_sel = (u16)(msr_data + 0x8);
-	//ss_sel = (u16)((msr_data + 0x8) | 0x3);
+	ss_sel = (u16)((msr_data + 0x8) | 0x3);
 	ss.dpl = 0x3;
-	//ss.b = 1;
 	
 	ops->set_segment(ctxt, cs_sel, &cs, 0, VCPU_SREG_CS);
 	ops->set_segment(ctxt, ss_sel, &ss, 0, VCPU_SREG_SS);
 	
-	ctxt->eflags = reg_read(ctxt, VCPU_REGS_R11);
-	//ctxt->eflags = (reg_read(ctxt, VCPU_REGS_R11) & 0x3c7fd7) | 0x2;
-	
-	
+	ctxt->eflags = (reg_read(ctxt, VCPU_REGS_R11) & 0x3c7fd7) | 0x2;
+
 	ctxt->_eip = reg_read(ctxt, VCPU_REGS_RCX);
 
 	return X86EMUL_CONTINUE;
