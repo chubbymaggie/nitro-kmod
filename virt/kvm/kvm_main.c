@@ -1951,6 +1951,8 @@ static int kvm_vm_ioctl_create_vcpu(struct kvm *kvm, u32 id)
 	kvm->vcpus[atomic_read(&kvm->online_vcpus)] = vcpu;
 	smp_wmb();
 	atomic_inc(&kvm->online_vcpus);
+	
+	nitro_create_vcpu_hook(vcpu);
 
 	mutex_unlock(&kvm->lock);
 	kvm_arch_vcpu_postcreate(vcpu);

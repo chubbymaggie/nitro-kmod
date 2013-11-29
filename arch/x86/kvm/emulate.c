@@ -2162,7 +2162,7 @@ static int em_syscall(struct x86_emulate_ctxt *ctxt)
 	ops->get_msr(ctxt, MSR_EFER, &efer);
 	setup_syscalls_segments(ctxt, &cs, &ss);
 
-	if (!(efer & EFER_SCE) && !vcpu->kvm->nitro_kvm.trap_syscalls)
+	if (!(efer & EFER_SCE) && !vcpu->kvm->nitro.trap_syscall)
 		return emulate_ud(ctxt);
 
 	ops->get_msr(ctxt, MSR_STAR, &msr_data);
@@ -2200,6 +2200,9 @@ static int em_syscall(struct x86_emulate_ctxt *ctxt)
 	
 	printk(KERN_INFO "nitro: syscall executed with RAX: %lu\n",reg_read(ctxt, VCPU_REGS_RAX));
 
+	if(vcpu->kvm->nitro.trap_syscall)
+	  vcpu->nitro.trap_syscall_hit = 1;
+	
 	return X86EMUL_CONTINUE;
 }
 
@@ -2234,7 +2237,7 @@ static int em_sysret(struct x86_emulate_ctxt *ctxt)
 	ops->get_msr(ctxt, MSR_EFER, &efer);
 	setup_syscalls_segments(ctxt, &cs, &ss);
 
-	if (!(efer & EFER_SCE) && !vcpu->kvm->nitro_kvm.trap_syscalls)
+	if (!(efer & EFER_SCE) && !vcpu->kvm->nitro.trap_syscall)
 		return emulate_ud(ctxt);
 
 

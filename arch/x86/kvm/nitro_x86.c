@@ -26,7 +26,7 @@ int nitro_set_syscall_trap(struct kvm *kvm){
     vcpu_put(vcpu);
   }
   
-  kvm->nitro_kvm.trap_syscalls = 1;
+  kvm->nitro.trap_syscall = 1;
   
   mutex_unlock(&kvm->lock);
   
@@ -43,7 +43,7 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
   
   mutex_lock(&kvm->lock);
   
-  kvm->nitro_kvm.trap_syscalls = 0;
+  kvm->nitro.trap_syscall = 0;
   
   kvm_for_each_vcpu(i, vcpu, kvm){
     vcpu_load(vcpu);
@@ -58,5 +58,15 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
   mutex_unlock(&kvm->lock);
   
   return 0;
+}
+
+int nitro_handle_syscall_trap(struct kvm_vcpu *vcpu){
+  printk(KERN_INFO "nitro: syscall trap\n");
+  
+  //vcpu->run->exit_reason = KVM_EXIT_DEBUG;
+  vcpu->nitro.trap_syscall_hit = 0;
+
+  //return 0;//returning 0 will give control back to qemu
+  return 1;
 }
 

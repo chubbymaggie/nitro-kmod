@@ -37,15 +37,23 @@ void nitro_create_vm_hook(struct kvm *kvm){
   pid = pid_nr(get_task_pid(current, PIDTYPE_PID));
   printk(KERN_INFO "nitro: new VM created, creating process: %d\n", pid);
   
-  //init nitro_kvm
-  kvm->nitro_kvm.trap_syscalls = 0;
+  //init nitro
+  kvm->nitro.trap_syscall = 0;
 }
 
 void nitro_destroy_vm_hook(struct kvm *kvm){
   
-  //deinit nitro_kvm
-  kvm->nitro_kvm.trap_syscalls = 0;
+  //deinit nitro
+  kvm->nitro.trap_syscall = 0;
   
+}
+
+void nitro_create_vcpu_hook(struct kvm_vcpu *vcpu){
+  vcpu->nitro.trap_syscall_hit = 0;
+}
+
+void nitro_destroy_vcpu_hook(struct kvm_vcpu *vcpu){
+  vcpu->nitro.trap_syscall_hit = 0;
 }
 
 int nitro_iotcl_num_vms(void){
