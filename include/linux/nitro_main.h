@@ -9,6 +9,8 @@
 
 struct nitro{
   int trap_syscall; //determines whether the syscall trap is globally set
+  unsigned long *syscall_bitmap;
+  unsigned int max_syscall;
 };
 
 struct nitro_vcpu{

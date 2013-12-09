@@ -39,12 +39,19 @@ void nitro_create_vm_hook(struct kvm *kvm){
   
   //init nitro
   kvm->nitro.trap_syscall = 0;
+  kvm->nitro.syscall_bitmap = NULL;
+  kvm->nitro.max_syscall = 0;
 }
 
 void nitro_destroy_vm_hook(struct kvm *kvm){
   
   //deinit nitro
   kvm->nitro.trap_syscall = 0;
+  if(kvm->nitro.syscall_bitmap != NULL){
+    kfree(kvm->nitro.syscall_bitmap);
+    kvm->nitro.syscall_bitmap = NULL;
+  }
+  kvm->nitro.max_syscall = 0;
   
 }
 

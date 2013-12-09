@@ -6,7 +6,7 @@
 
 extern int kvm_set_msr_common(struct kvm_vcpu*, struct msr_data*);
 
-int nitro_set_syscall_trap(struct kvm *kvm){
+int nitro_set_syscall_trap(struct kvm *kvm,unsigned long *bitmap,int bitmap_size){
   int i;
   struct kvm_vcpu *vcpu;
   u64 efer;
@@ -15,6 +15,11 @@ int nitro_set_syscall_trap(struct kvm *kvm){
   printk(KERN_INFO "nitro: set syscall trap\n");
   
   mutex_lock(&kvm->lock);
+  
+  kvm->nitro.syscall_bitmap = bitmap;
+  kvm->nitro.max_syscall = ((bitmap_size * sizeof(unsigned long)) * 8) - 1;
+  
+  kvm->nitro.trap_syscall = 1;
   
   kvm_for_each_vcpu(i, vcpu, kvm){
     vcpu_load(vcpu);
@@ -25,8 +30,6 @@ int nitro_set_syscall_trap(struct kvm *kvm){
     kvm_set_msr_common(vcpu, &msr_info);
     vcpu_put(vcpu);
   }
-  
-  kvm->nitro.trap_syscall = 1;
   
   mutex_unlock(&kvm->lock);
   
@@ -52,11 +55,16 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
     msr_info.data = efer | EFER_SCE;
     msr_info.host_initiated = true;
     kvm_set_msr_common(vcpu, &msr_info);
+    
+    vcpu->nitro.trap_syscall_hit = 0;
     //if waiters, wake up
     if(completion_done(&(vcpu->nitro.k_wait_cv)) == 0)
       complete_all(&(vcpu->nitro.k_wait_cv));
     vcpu_put(vcpu);
   }
+  if(kvm->nitro.syscall_bitmap != NULL)
+    kfree(kvm->nitro.syscall_bitmap);
+  kvm->nitro.max_syscall = 0;
   
   mutex_unlock(&kvm->lock);
 
@@ -64,9 +72,19 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
 }
 
 int nitro_handle_syscall_trap(struct kvm_vcpu *vcpu){
+  unsigned long syscall_nr;
+  
   //printk(KERN_INFO "nitro: syscall trap\n");
   
   vcpu->nitro.trap_syscall_hit = 0;
+  
+  if(vcpu->kvm->nitro.max_syscall > 0){
+    syscall_nr = kvm_register_read(vcpu, VCPU_REGS_RAX);
+    
+    if()
+  }
+  
+  
   vcpu->nitro.event = KVM_NITRO_SYSCALL_TRAPPED;
   
   up(&(vcpu->nitro.n_wait_sem));

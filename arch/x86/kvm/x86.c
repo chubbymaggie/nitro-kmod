@@ -3831,7 +3831,29 @@ long kvm_arch_vm_ioctl(struct file *filp,
 		break;
 	}
 	case KVM_NITRO_SET_SYSCALL_TRAP: {
-		r = nitro_set_syscall_trap(kvm);
+		struct nitro_syscall_trap user_sct;
+		unsigned long *bitmap;
+
+		r = -EFAULT;
+		if (copy_from_user(&user_sct, argp, sizeof(struct nitro_syscall_trap)))
+			goto out;
+		
+		if(user_sct.bitmap_size > 0){
+			r = -ENOMEM;
+			bitmap = kmalloc(user_sct.bitmap_size * sizeof(unsigned long), GFP_KERNEL);
+			if (bitmap == NULL)
+				goto out;
+			
+			r = -EFAULT;
+			if (copy_from_user(bitmap, user_sct.bitmap, user_sct.bitmap_size * sizeof(unsigned long))){
+				kfree(bitmap);
+				goto out;
+			}
+		}
+		else
+			bitmap = NULL;
+	  
+		r = nitro_set_syscall_trap(kvm,bitmap,user_sct.bitmap_size);
 		break;
 	}
 	case KVM_NITRO_UNSET_SYSCALL_TRAP: {
