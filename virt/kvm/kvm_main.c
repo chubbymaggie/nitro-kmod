@@ -2157,9 +2157,9 @@ out_free1:
 	}
 	case KVM_NITRO_GET_EVENT: 
 		r = nitro_ioctl_get_event(vcpu);
-		kfree(fpu);
-		kfree(kvm_sregs);
-		return r;
+		
+		//nitro_ioctl_get_event already puts the vcpu before blocking
+		goto out2;
 		break;
 	case KVM_NITRO_CONTINUE: 
 		r = nitro_ioctl_continue(vcpu);
@@ -2169,6 +2169,7 @@ out_free1:
 	}
 out:
 	vcpu_put(vcpu);
+out2:
 	kfree(fpu);
 	kfree(kvm_sregs);
 	return r;

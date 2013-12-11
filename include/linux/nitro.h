@@ -14,8 +14,8 @@ struct nitro_vcpus{
 };
 
 struct nitro_syscall_trap{
-  unsigned long *bitmap;
-  int bitmap_size;
+  int *syscalls;
+  int size;
 };
 
 //return reasons
