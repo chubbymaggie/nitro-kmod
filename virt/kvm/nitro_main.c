@@ -6,12 +6,26 @@
 #include <linux/compiler.h>
 #include <asm/current.h>
 #include <asm-generic/errno-base.h>
+#include <linux/preempt.h>
 
 #include <linux/kvm_host.h>
 
 #include <linux/nitro_main.h>
 
 extern int create_vcpu_fd(struct kvm_vcpu*);
+
+int nitro_vcpu_load(struct kvm_vcpu *vcpu)
+{
+	int cpu;
+
+	if (mutex_lock_killable(&vcpu->mutex))
+		return -EINTR;
+	cpu = get_cpu();
+	preempt_notifier_register(&vcpu->preempt_notifier);
+	kvm_arch_vcpu_load(vcpu, cpu);
+	put_cpu();
+	return 0;
+}
 
 struct kvm* nitro_get_vm_by_creator(pid_t creator){
   struct kvm *rv;
@@ -113,9 +127,15 @@ error_out:
 }
 
 int nitro_ioctl_get_event(struct kvm_vcpu *vcpu){
+  int rv;
+  
   vcpu_put(vcpu);
-  down_killable(&(vcpu->nitro.n_wait_sem));
-  return vcpu->nitro.event;
+  rv = down_interruptible(&(vcpu->nitro.n_wait_sem));
+  
+  if (rv == 0)
+    rv = vcpu->nitro.event;
+  
+  return rv;
 }
 
 int nitro_ioctl_continue(struct kvm_vcpu *vcpu){

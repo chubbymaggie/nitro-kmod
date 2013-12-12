@@ -23,7 +23,8 @@ int nitro_set_syscall_trap(struct kvm *kvm,unsigned long *bitmap,int max_syscall
   kvm->nitro.trap_syscall = 1;
   
   kvm_for_each_vcpu(i, vcpu, kvm){
-    vcpu_load(vcpu);
+    //vcpu_load(vcpu);
+    nitro_vcpu_load(vcpu);
     
     kvm_get_msr_common(vcpu, MSR_EFER, &efer);
     msr_info.index = MSR_EFER;
@@ -54,7 +55,10 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
   kvm->nitro.trap_syscall = 0;
   
   kvm_for_each_vcpu(i, vcpu, kvm){
-    vcpu_load(vcpu);
+    printk(KERN_INFO "nitro: unset syscall trap: before load\n");
+    //vcpu_load(vcpu);
+    nitro_vcpu_load(vcpu);
+    printk(KERN_INFO "nitro: unset syscall trap: after load\n");
     
     kvm_get_msr_common(vcpu, MSR_EFER, &efer);
     msr_info.index = MSR_EFER;
@@ -64,8 +68,9 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
     
     vcpu->nitro.trap_syscall_hit = 0;
     //if waiters, wake up
-    if(completion_done(&(vcpu->nitro.k_wait_cv)) == 0)
-      complete_all(&(vcpu->nitro.k_wait_cv));
+    //if(completion_done(&(vcpu->nitro.k_wait_cv)) == 0)
+    //complete_all(&(vcpu->nitro.k_wait_cv));
+    complete(&(vcpu->nitro.k_wait_cv));
     
     vcpu_put(vcpu);
   }
@@ -82,6 +87,7 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
 
 int nitro_handle_syscall_trap(struct kvm_vcpu *vcpu){
   unsigned long syscall_nr;
+  long rv;
   struct kvm *kvm;
   
   kvm = vcpu->kvm;
@@ -100,7 +106,13 @@ int nitro_handle_syscall_trap(struct kvm_vcpu *vcpu){
   
   up(&(vcpu->nitro.n_wait_sem));
   vcpu_put(vcpu);
-  wait_for_completion_killable(&(vcpu->nitro.k_wait_cv));
+  rv = wait_for_completion_interruptible_timeout(&(vcpu->nitro.k_wait_cv),msecs_to_jiffies(30000));
+  
+  if (rv == 0)
+    printk(KERN_INFO "nitro: %s: wait timed out\n",__FUNCTION__);
+  else if (rv < 0)
+    printk(KERN_INFO "nitro: %s: wait interrupted\n",__FUNCTION__);
+  
   vcpu_load(vcpu);
 
   //returning 0 will give control back to qemu
