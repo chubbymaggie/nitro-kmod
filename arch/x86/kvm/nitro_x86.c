@@ -15,8 +15,6 @@ int nitro_set_syscall_trap(struct kvm *kvm,unsigned long *bitmap,int max_syscall
   
   printk(KERN_INFO "nitro: set syscall trap\n");
   
-  mutex_lock(&kvm->lock);
-  
   kvm->nitro.syscall_bitmap = bitmap;
   kvm->nitro.max_syscall = max_syscall;
   
@@ -37,8 +35,6 @@ int nitro_set_syscall_trap(struct kvm *kvm,unsigned long *bitmap,int max_syscall
     vcpu_put(vcpu);
   }
   
-  mutex_unlock(&kvm->lock);
-  
   return 0;
 }
 
@@ -50,15 +46,11 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
   
   printk(KERN_INFO "nitro: unset syscall trap\n");
   
-  mutex_lock(&kvm->lock);
-  
   kvm->nitro.trap_syscall = 0;
   
   kvm_for_each_vcpu(i, vcpu, kvm){
-    printk(KERN_INFO "nitro: unset syscall trap: before load\n");
     //vcpu_load(vcpu);
     nitro_vcpu_load(vcpu);
-    printk(KERN_INFO "nitro: unset syscall trap: after load\n");
     
     kvm_get_msr_common(vcpu, MSR_EFER, &efer);
     msr_info.index = MSR_EFER;
@@ -68,9 +60,8 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
     
     vcpu->nitro.trap_syscall_hit = 0;
     //if waiters, wake up
-    //if(completion_done(&(vcpu->nitro.k_wait_cv)) == 0)
-    //complete_all(&(vcpu->nitro.k_wait_cv));
-    complete(&(vcpu->nitro.k_wait_cv));
+    if(completion_done(&(vcpu->nitro.k_wait_cv)) == 0)
+      complete_all(&(vcpu->nitro.k_wait_cv));
     
     vcpu_put(vcpu);
   }
@@ -79,8 +70,6 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
     kvm->nitro.syscall_bitmap = NULL;
   }
   kvm->nitro.max_syscall = 0;
-  
-  mutex_unlock(&kvm->lock);
 
   return 0;
 }
@@ -105,7 +94,7 @@ int nitro_handle_syscall_trap(struct kvm_vcpu *vcpu){
   vcpu->nitro.event = KVM_NITRO_SYSCALL_TRAPPED;
   
   up(&(vcpu->nitro.n_wait_sem));
-  vcpu_put(vcpu);
+  //vcpu_put(vcpu);
   rv = wait_for_completion_interruptible_timeout(&(vcpu->nitro.k_wait_cv),msecs_to_jiffies(30000));
   
   if (rv == 0)
@@ -113,7 +102,7 @@ int nitro_handle_syscall_trap(struct kvm_vcpu *vcpu){
   else if (rv < 0)
     printk(KERN_INFO "nitro: %s: wait interrupted\n",__FUNCTION__);
   
-  vcpu_load(vcpu);
+  //vcpu_load(vcpu);
 
   //returning 0 will give control back to qemu
   return 1;

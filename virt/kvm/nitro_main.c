@@ -129,7 +129,7 @@ error_out:
 int nitro_ioctl_get_event(struct kvm_vcpu *vcpu){
   int rv;
   
-  vcpu_put(vcpu);
+  //vcpu_put(vcpu);
   rv = down_interruptible(&(vcpu->nitro.n_wait_sem));
   
   if (rv == 0)

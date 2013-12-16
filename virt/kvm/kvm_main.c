@@ -1996,6 +1996,14 @@ static long kvm_vcpu_ioctl(struct file *filp,
 	if (ioctl == KVM_S390_INTERRUPT || ioctl == KVM_INTERRUPT)
 		return kvm_arch_vcpu_ioctl(filp, ioctl, arg);
 #endif
+	
+	//asynchronous nitro calls
+	if (ioctl == KVM_NITRO_GET_EVENT)
+		return nitro_ioctl_get_event(vcpu);
+	else if(ioctl == KVM_NITRO_CONTINUE)
+		return nitro_ioctl_continue(vcpu);
+	
+	
 
 	r = vcpu_load(vcpu);
 	if (r)
@@ -2155,21 +2163,11 @@ out_free1:
 		r = kvm_arch_vcpu_ioctl_set_fpu(vcpu, fpu);
 		break;
 	}
-	case KVM_NITRO_GET_EVENT: 
-		r = nitro_ioctl_get_event(vcpu);
-		
-		//nitro_ioctl_get_event already puts the vcpu before blocking
-		goto out2;
-		break;
-	case KVM_NITRO_CONTINUE: 
-		r = nitro_ioctl_continue(vcpu);
-		break;
 	default:
 		r = kvm_arch_vcpu_ioctl(filp, ioctl, arg);
 	}
 out:
 	vcpu_put(vcpu);
-out2:
 	kfree(fpu);
 	kfree(kvm_sregs);
 	return r;
