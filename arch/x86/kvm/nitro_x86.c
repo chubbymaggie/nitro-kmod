@@ -46,10 +46,15 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
   
   printk(KERN_INFO "nitro: unset syscall trap\n");
   
-  kvm->nitro.trap_syscall = 0;
-  
   kvm_for_each_vcpu(i, vcpu, kvm){
     //vcpu_load(vcpu);
+    
+    vcpu->nitro.trap_syscall_hit = 0;
+    //if waiters, wake up
+    //if(completion_done(&(vcpu->nitro.k_wait_cv)) == 0)
+    complete_all(&(vcpu->nitro.k_wait_cv));
+    
+    
     nitro_vcpu_load(vcpu);
     
     kvm_get_msr_common(vcpu, MSR_EFER, &efer);
@@ -58,13 +63,12 @@ int nitro_unset_syscall_trap(struct kvm *kvm){
     msr_info.host_initiated = true;
     kvm_set_msr_common(vcpu, &msr_info);
     
-    vcpu->nitro.trap_syscall_hit = 0;
-    //if waiters, wake up
-    if(completion_done(&(vcpu->nitro.k_wait_cv)) == 0)
-      complete_all(&(vcpu->nitro.k_wait_cv));
+
     
     vcpu_put(vcpu);
   }
+  
+  kvm->nitro.trap_syscall = 0;
   if(kvm->nitro.syscall_bitmap != NULL){
     kfree(kvm->nitro.syscall_bitmap);
     kvm->nitro.syscall_bitmap = NULL;
